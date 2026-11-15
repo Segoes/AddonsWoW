@@ -15,6 +15,7 @@ ns.STRINGS = {
         NOT_LEARNED = "Fishing not learned",
         LOADED = "loaded. Type %s for commands.",
         SKILL_UP = "Fishing increased to %d/%d.",
+        FISH_SKILL_HINT = "This water needs more fishing skill. Try an easier zone.",
 
         MINIMAP_CLICK = "Click: show or hide the window.",
         MINIMAP_DRAG = "Drag: move the button.",
@@ -96,6 +97,7 @@ ns.STRINGS = {
         NOT_LEARNED = "Pesca no aprendida",
         LOADED = "cargado. Escribe %s para ver los comandos.",
         SKILL_UP = "Pesca aumentada a %d/%d.",
+        FISH_SKILL_HINT = "Esta agua necesita más habilidad de pesca. Prueba en una zona más fácil.",
 
         MINIMAP_CLICK = "Clic: mostrar u ocultar la ventana.",
         MINIMAP_DRAG = "Arrastrar: mover el botón.",
@@ -177,6 +179,7 @@ ns.STRINGS = {
         NOT_LEARNED = "Angeln nicht erlernt",
         LOADED = "geladen. Gib %s ein, um die Befehle zu sehen.",
         SKILL_UP = "Angeln auf %d/%d erhöht.",
+        FISH_SKILL_HINT = "Dieses Gewässer braucht mehr Angelfertigkeit. Versuch es in einem leichteren Gebiet.",
 
         MINIMAP_CLICK = "Klick: Fenster ein- oder ausblenden.",
         MINIMAP_DRAG = "Ziehen: Schaltfläche verschieben.",
@@ -258,6 +261,7 @@ ns.STRINGS = {
         NOT_LEARNED = "Pêche non apprise",
         LOADED = "chargé. Tapez %s pour voir les commandes.",
         SKILL_UP = "Pêche augmentée à %d/%d.",
+        FISH_SKILL_HINT = "Cette eau demande plus de compétence en pêche. Essayez une zone plus facile.",
 
         MINIMAP_CLICK = "Clic : afficher ou masquer la fenêtre.",
         MINIMAP_DRAG = "Glisser : déplacer le bouton.",
@@ -339,6 +343,7 @@ ns.STRINGS = {
         NOT_LEARNED = "Pesca não aprendida",
         LOADED = "carregado. Digite %s para ver os comandos.",
         SKILL_UP = "Pesca aumentada para %d/%d.",
+        FISH_SKILL_HINT = "Esta água exige mais perícia em pesca. Tente uma zona mais fácil.",
 
         MINIMAP_CLICK = "Clique: mostrar ou ocultar a janela.",
         MINIMAP_DRAG = "Arrastar: mover o botão.",
@@ -420,6 +425,7 @@ ns.STRINGS = {
         NOT_LEARNED = "Pesca non appresa",
         LOADED = "caricato. Scrivi %s per vedere i comandi.",
         SKILL_UP = "Pesca aumentata a %d/%d.",
+        FISH_SKILL_HINT = "Quest'acqua richiede più abilità di pesca. Prova in una zona più facile.",
 
         MINIMAP_CLICK = "Clic: mostra o nascondi la finestra.",
         MINIMAP_DRAG = "Trascina: sposta il pulsante.",
@@ -502,6 +508,14 @@ ns.DEFAULT_LANGUAGE = "enUS"
 function ns.GetLanguage()
     local code = AnglerDB and AnglerDB.language
     return ns.STRINGS[code] and code or ns.DEFAULT_LANGUAGE
+end
+
+function ns.LanguageIndex()
+    local code = ns.GetLanguage()
+    for i, language in ipairs(ns.LANGUAGES) do
+        if language.code == code then return i end
+    end
+    return 1
 end
 
 function ns.LanguageInfo(code)

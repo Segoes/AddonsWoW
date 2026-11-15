@@ -2,7 +2,7 @@
 ## Title: Angler
 ## Notes: Fishing companion: skill bar, lures, one-key fishing and a map of fishing pools
 ## IconTexture: Interface\AddOns\Angler\Media\Icon
-## Version: 0.21.0
+## Version: 1.0.0
 ## SavedVariables: AnglerDB
 ## SavedVariablesPerCharacter: AnglerCharDB
 
@@ -19,5 +19,6 @@ Locales.lua
 Lures.lua
 Pools.lua
 Data/SharedPools.lua
+Data/ErrorStrings.lua
 Angler.lua
 Share.lua

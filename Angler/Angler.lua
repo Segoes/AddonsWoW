@@ -13,6 +13,10 @@ local function Print(msg)
 end
 ns.Print = Print
 
+local function PrintError(msg)
+    Print(RED_FONT_COLOR:WrapTextInColorCode(msg))
+end
+
 local function GetFishingSkill()
     local info = C_SkillInfo.GetSkillLineInfoByID(FISHING_SKILL_ID)
     if not info then
@@ -358,6 +362,67 @@ local restoreTimer
 local function IsFishingSpell(spellID)
     local name = spellID and C_Spell.GetSpellName(spellID)
     return name ~= nil and name == C_Spell.GetSpellName(FISHING_SPELL_ID)
+end
+
+-- The game reports why a cast failed only as a UI error, which is not tied to a spell, so errors are
+-- linked to fishing by timing: from the cast until shortly after the line comes back.
+local FISHING_ERROR_SECONDS = 1
+local fishingErrorsUntil = 0
+
+-- Game errors come in the client language, which can differ from the addon language. The message is matched
+-- against the client's own error strings and replaced by the official text in the addon language.
+local errorTexts, errorPatterns
+
+local function FormatToPattern(format)
+    local pattern = format:gsub("%%%%", "\1"):gsub("%%[%d%$]*[%-%.%d]*([sdif])", function(kind)
+        return kind == "s" and "\2" or "\3"
+    end)
+    pattern = pattern:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0")
+    pattern = pattern:gsub("\1", "%%%%"):gsub("\2", "(.-)"):gsub("\3", "([%%d%%.,%%-]+)")
+    return "^" .. pattern .. "$"
+end
+
+local function IndexErrors()
+    errorTexts, errorPatterns = {}, {}
+    for tag, texts in pairs(ns.ERROR_STRINGS) do
+        local own = _G[tag]
+        if type(own) == "string" and own ~= "" then
+            local literal = own:gsub("%%[%d%$]*[%-%.%d]*[sdif%%]", "")
+            if #literal < #own then
+                -- A string that is little more than "%s" would match any message.
+                if #literal >= 4 then
+                    errorPatterns[#errorPatterns + 1] = { FormatToPattern(own), texts, tag, #literal }
+                end
+            else
+                errorTexts[own] = { texts, tag }
+            end
+        end
+    end
+    table.sort(errorPatterns, function(a, b) return a[4] > b[4] end)
+end
+
+local function TranslateError(message)
+    if not errorTexts then IndexErrors() end
+    local language = ns.LanguageIndex()
+    local exact = errorTexts[message]
+    if exact then return exact[1][language], exact[2] end
+    for _, entry in ipairs(errorPatterns) do
+        local captures = { message:match(entry[1]) }
+        if #captures > 0 then
+            local ok, text = pcall(string.format, entry[2][language], unpack(captures))
+            if ok then return text, entry[3] end
+        end
+    end
+    return message
+end
+
+local function ReportFishingError(message)
+    if GetTime() > fishingErrorsUntil or type(message) ~= "string" or issecretvalue(message) then return end
+    local text, tag = TranslateError(message)
+    if tag == "SPELL_FAILED_LOW_CASTLEVEL" then
+        text = text:gsub("[%.!]?%s*$", ". ", 1) .. L("FISH_SKILL_HINT")
+    end
+    PrintError(text)
 end
 
 -- Originals live in SavedVariables so a crash mid-fishing can be undone on the next login.
@@ -884,16 +949,18 @@ events:RegisterEvent("LOOT_READY")
 events:RegisterEvent("LOOT_OPENED")
 events:RegisterEvent("LOOT_CLOSED")
 events:RegisterEvent("SKILL_LINES_CHANGED")
+events:RegisterEvent("UNIT_SPELLCAST_SENT")
 events:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
 events:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
 events:RegisterEvent("PLAYER_LOGOUT")
+events:RegisterEvent("UI_ERROR_MESSAGE")
 events:RegisterEvent("PLAYER_REGEN_ENABLED")
 events:RegisterEvent("PLAYER_REGEN_DISABLED")
 events:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 events:RegisterEvent("UNIT_INVENTORY_CHANGED")
 events:RegisterEvent("BAG_UPDATE_DELAYED")
 
-events:SetScript("OnEvent", function(self, event, arg1, _, arg3)
+events:SetScript("OnEvent", function(self, event, arg1, arg2, arg3, arg4)
     if event == "ADDON_LOADED" and arg1 == addonName then
         AnglerDB = AnglerDB or {}
         if AnglerDB.shown == nil then AnglerDB.shown = true end
@@ -967,6 +1034,14 @@ events:SetScript("OnEvent", function(self, event, arg1, _, arg3)
             UpdateLureButton()
         end
 
+    elseif event == "UNIT_SPELLCAST_SENT" then
+        if arg1 == "player" and IsFishingSpell(arg4) then
+            fishingErrorsUntil = GetTime() + FISHING_ERROR_SECONDS
+        end
+
+    elseif event == "UI_ERROR_MESSAGE" then
+        ReportFishingError(arg2)
+
     elseif event == "UNIT_SPELLCAST_CHANNEL_START" then
         if AnglerDB.debug and arg1 == "player" then
             DebugLog(("[debug] CHANNEL_START spell=%s name=%s fishingName=%s sound=%s"):format(
@@ -974,6 +1049,7 @@ events:SetScript("OnEvent", function(self, event, arg1, _, arg3)
                 tostring(C_Spell.GetSpellName(FISHING_SPELL_ID)), tostring(AnglerDB.sound)))
         end
         if arg1 == "player" and IsFishingSpell(arg3) then
+            fishingErrorsUntil = math.huge
             if AnglerDB.sound then BoostSound() end
             if AnglerDB.key then SetKeyMode("reel") end
         end
@@ -983,6 +1059,7 @@ events:SetScript("OnEvent", function(self, event, arg1, _, arg3)
             DebugLog(("[debug] CHANNEL_STOP spell=%s saved=%s"):format(tostring(arg3), tostring(AnglerDB.soundSaved ~= nil)))
         end
         if arg1 == "player" and IsFishingSpell(arg3) then
+            fishingErrorsUntil = GetTime() + FISHING_ERROR_SECONDS
             ScheduleSoundRestore()
             if AnglerDB.key then SetKeyMode("cast") end
         end
