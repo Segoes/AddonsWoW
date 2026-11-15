@@ -29,7 +29,7 @@ Check that **Angler** is enabled in the AddOns list on the character screen.
 - **Apply lure:** puts the best lure in your bags that your skill allows on the pole. The number shows how many lures are left, and the tooltip shows the minutes left on the current one. The button pulses when the pole has no lure and you have one.
 - **Set key:** left-click, then press any key (Shift, Ctrl and Alt combinations are allowed). Escape cancels, right-click removes the key.
 - **Language button** (`EN`, `ES`, `DE`, `FR`, `PT`, `IT`): changes the addon language. English is the default.
-- **Gear menu** (title bar): turn the louder splash, the minimap button and the pools on the map on or off; export your pools; set or remove the fishing key.
+- **Gear menu** (title bar): turn the louder splash, the minimap button, the pools on the map and the reminder to send pools on or off; export your pools; set or remove the fishing key.
 - Drag the window to move it. Its position is saved. Equip pole, Swap back and Apply lure don't work in combat.
 
 ## One-key fishing
@@ -68,6 +68,8 @@ Angler comes with pools sent in by other players, and each update adds the new o
 3. Click the link box below the text, press Ctrl+C, and open the link in your browser: [forms.gle/DGs2jQ9yjPVqo3jp6](https://forms.gle/DGs2jQ9yjPVqo3jp6).
 4. Paste the text in the form (Ctrl+V) and send it. Your pools will be in the next version for everyone.
 
+Once a day, when you log in, Angler reminds you if you have pools that are not on the shared map yet and that you haven't exported. Turn the reminder off in the gear menu or with `/angler reminder off`.
+
 ## Commands
 
 | Command | Effect |
@@ -79,6 +81,7 @@ Angler comes with pools sent in by other players, and each update adds the new o
 | `/angler pools on` / `off` | Pools on the world map and minimap |
 | `/angler minimap on` / `off` | Minimap button |
 | `/angler export` | Copy your pools to send them through the form |
+| `/angler reminder on` / `off` | Daily reminder to send new pools |
 | `/angler language en` / `es` / `de` / `fr` / `pt` / `it` | Addon language |
 | `/angler debug on` / `off` | Diagnostics for bug reports |
 

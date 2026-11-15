@@ -12,6 +12,7 @@ ns.SHARED_POOLS = {
     },
     [1424] = {
         { "Sagefish School", 6241, 4254 },
+        { "Sagefish School", 6315, 4072 },
         { "Sagefish School", 6764, 3552 },
         { "Sagefish School", 6788, 2971 },
         { "Sagefish School", 6814, 2042 },

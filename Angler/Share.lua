@@ -112,6 +112,7 @@ function ns.ShowExport()
         return
     end
     exported = text
+    ns.MarkPoolsSent()
     editBox:SetText(text)
     share:Show()
     editBox:SetFocus()

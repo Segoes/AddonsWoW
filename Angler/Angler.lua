@@ -256,19 +256,42 @@ local function SharedSpots()
     return sharedSpots
 end
 
--- A shared pool the player has recorded too would show twice; the player's own record wins.
-local function IsRecordedByPlayer(mapID, shared)
-    local spots = AnglerDB.pools[mapID]
+local function HasPoolNear(spots, mapID, kind, x, y)
     if not spots then return false end
     local width, height = C_Map.GetMapWorldSize(mapID)
     if not width or width == 0 or height == 0 then return false end
     for _, spot in ipairs(spots) do
-        if spot.kind == shared.kind
-                and DistanceYards(width, height, spot.x, spot.y, shared.x, shared.y) <= SHARED_DUPLICATE_YARDS then
+        if spot.kind == kind and DistanceYards(width, height, spot.x, spot.y, x, y) <= SHARED_DUPLICATE_YARDS then
             return true
         end
     end
     return false
+end
+
+-- A shared pool the player has recorded too would show twice; the player's own record wins.
+local function IsRecordedByPlayer(mapID, shared)
+    return HasPoolNear(AnglerDB.pools[mapID], mapID, shared.kind, shared.x, shared.y)
+end
+
+-- Pools already in the shared list reach every player with the next update, so they need no sending.
+local function CountUnsentPools()
+    local count = 0
+    for mapID, spots in pairs(AnglerDB.pools) do
+        for _, spot in ipairs(spots) do
+            if not spot.sent and not HasPoolNear(SharedSpots()[mapID], mapID, spot.kind, spot.x, spot.y) then
+                count = count + 1
+            end
+        end
+    end
+    return count
+end
+
+function ns.MarkPoolsSent()
+    for _, spots in pairs(AnglerDB.pools) do
+        for _, spot in ipairs(spots) do
+            spot.sent = true
+        end
+    end
 end
 
 local function UpdatePoolPins()
@@ -942,6 +965,18 @@ local function CheckSkillUp()
     AnglerDB.lastRank = rank
 end
 
+-- Once a day at most, and late enough after login not to drown in the other addons' login messages.
+local SHARE_REMINDER_DELAY = 15
+local SHARE_REMINDER_INTERVAL = 24 * 60 * 60
+
+local function RemindToShare()
+    if not AnglerDB.reminder or time() - (AnglerDB.lastReminder or 0) < SHARE_REMINDER_INTERVAL then return end
+    local count = CountUnsentPools()
+    if count == 0 then return end
+    AnglerDB.lastReminder = time()
+    Print(L("REMINDER_TEXT"):format(count, Highlight("/angler export")))
+end
+
 local events = CreateFrame("Frame")
 events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("PLAYER_LOGIN")
@@ -977,6 +1012,7 @@ events:SetScript("OnEvent", function(self, event, arg1, arg2, arg3, arg4)
             if #spots == 0 then AnglerDB.pools[mapID] = nil end
         end
         if AnglerDB.showPools == nil then AnglerDB.showPools = true end
+        if AnglerDB.reminder == nil then AnglerDB.reminder = true end
         AnglerDB.minimap = AnglerDB.minimap or { minimapPos = MINIMAP_DEFAULT_ANGLE }
         minimapIcon:Register(addonName, launcher, AnglerDB.minimap)
         AnglerCharDB = AnglerCharDB or {}
@@ -998,6 +1034,7 @@ events:SetScript("OnEvent", function(self, event, arg1, arg2, arg3, arg4)
         UpdatePoolPins()
         CheckSkillUp()
         Print(L("LOADED"):format(Highlight("/angler help")))
+        C_Timer.After(SHARE_REMINDER_DELAY, RemindToShare)
         RestoreSound()
         if AnglerDB.key then
             SetKeyMode("cast")
@@ -1108,6 +1145,11 @@ local TOGGLES = {
             UpdatePoolPins()
         end,
     },
+    reminder = {
+        strings = "REMINDER",
+        get = function() return AnglerDB.reminder end,
+        set = function(enabled) AnglerDB.reminder = enabled end,
+    },
     debug = {
         strings = "DEBUG",
         get = function() return AnglerDB.debug end,
@@ -1118,7 +1160,7 @@ local TOGGLES = {
         end,
     },
 }
-local MENU_TOGGLES = { "sound", "minimap", "pools" }
+local MENU_TOGGLES = { "sound", "minimap", "pools", "reminder" }
 
 local function SetToggle(name, enabled)
     local toggle = TOGGLES[name]
@@ -1210,6 +1252,7 @@ SlashCmdList.ANGLER = function(msg)
             { "/angler minimap on|off", "HELP_MINIMAP" },
             { "/angler pools on|off", "HELP_POOLS" },
             { "/angler export", "HELP_EXPORT" },
+            { "/angler reminder on|off", "HELP_REMINDER" },
             { "/angler sound on|off", "HELP_SOUND" },
             { "/angler key F|off", "HELP_KEY" },
             { "/angler language " .. ns.LanguageShortList(), "HELP_LANGUAGE" },
