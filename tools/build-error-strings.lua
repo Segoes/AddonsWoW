@@ -1,6 +1,6 @@
 ---@diagnostic disable: undefined-global
 -- The workspace language server is set up for WoW addons, which have no io or os; this is a plain Lua tool.
--- Builds Angler/Data/ErrorStrings.lua: the game's own cast and fishing error texts in every addon language.
+-- Builds AnglersCompanion/Data/ErrorStrings.lua: the game's own cast and fishing error texts in every addon language.
 --
 -- Usage (from the repository root, Lua 5.1, needs curl):
 --   lua tools/build-error-strings.lua
@@ -9,7 +9,7 @@
 -- so Italian is taken from the current retail build.
 
 local ROOT = (arg[0]:match("^(.*)/tools/[^/]+$") or ".")
-local OUTPUT = ROOT .. "/Angler/Data/ErrorStrings.lua"
+local OUTPUT = ROOT .. "/AnglersCompanion/Data/ErrorStrings.lua"
 local BUILD = "1.60.1.70888"
 local URL = "https://wago.tools/db2/GlobalStrings/csv?locale=%s"
 

@@ -12,7 +12,7 @@ local FORM_URL = "https://forms.gle/DGs2jQ9yjPVqo3jp6"
 
 local function EncodePools()
     local maps, count = {}, 0
-    for mapID, spots in pairs(AnglerDB.pools) do
+    for mapID, spots in pairs(AnglersCompanionDB.pools) do
         local list = {}
         for _, spot in ipairs(spots) do
             list[#list + 1] = {
@@ -35,7 +35,7 @@ end
 
 local SHARE_WIDTH, SHARE_HEIGHT = 420, 300
 
-local share = CreateFrame("Frame", "AnglerShareFrame", UIParent, "ButtonFrameTemplate")
+local share = CreateFrame("Frame", "AnglersCompanionShareFrame", UIParent, "ButtonFrameTemplate")
 ButtonFrameTemplate_HidePortrait(share)
 ButtonFrameTemplate_HideAttic(share)
 share:SetSize(SHARE_WIDTH, SHARE_HEIGHT)

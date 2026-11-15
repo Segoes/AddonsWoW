@@ -536,7 +536,7 @@ ns.STRINGS = {
 ns.DEFAULT_LANGUAGE = "enUS"
 
 function ns.GetLanguage()
-    local code = AnglerDB and AnglerDB.language
+    local code = AnglersCompanionDB and AnglersCompanionDB.language
     return ns.STRINGS[code] and code or ns.DEFAULT_LANGUAGE
 end
 

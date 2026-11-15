@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local ADDON_TITLE = "Angler's Companion"
 local L = ns.L
 
 local FISHING_SKILL_ID = 356
@@ -9,7 +10,7 @@ local COLOR = "|cff33ccff"
 local lootHandled = false
 
 local function Print(msg)
-    print(COLOR .. addonName .. "|r: " .. msg)
+    print(COLOR .. ADDON_TITLE .. "|r: " .. msg)
 end
 ns.Print = Print
 
@@ -65,7 +66,7 @@ local LURE_ROW_TOP = BUTTON_ROW_TOP + BUTTON_HEIGHT + BUTTON_GAP
 local HEIGHT = LURE_ROW_TOP + BUTTON_HEIGHT + PADDING
 local SKILL_COLOR = { 0.25, 0.55, 0.95 }
 
-local display = CreateFrame("Frame", "AnglerFrame", UIParent, "PortraitFrameTemplate")
+local display = CreateFrame("Frame", "AnglersCompanionFrame", UIParent, "PortraitFrameTemplate")
 display:SetSize(WIDTH, HEIGHT)
 display:SetMovable(true)
 display:EnableMouse(true)
@@ -75,12 +76,12 @@ display:SetScript("OnDragStart", display.StartMoving)
 display:SetScript("OnDragStop", function(self)
     self:StopMovingOrSizing()
     local point, _, relPoint, x, y = self:GetPoint()
-    AnglerDB.pos = { point, relPoint, x, y }
+    AnglersCompanionDB.pos = { point, relPoint, x, y }
 end)
-display:SetTitle(addonName)
+display:SetTitle(ADDON_TITLE)
 display:SetPortraitToAsset("Interface\\AddOns\\" .. addonName .. "\\Media\\Icon")
 display.CloseButton:HookScript("OnClick", function()
-    AnglerDB.shown = false
+    AnglersCompanionDB.shown = false
 end)
 
 local skillBar = CreateFrame("StatusBar", nil, display)
@@ -111,7 +112,7 @@ local function UpdateDisplay()
 end
 
 local function SetWindowShown(shown)
-    AnglerDB.shown = shown
+    AnglersCompanionDB.shown = shown
     display:SetShown(shown)
 end
 
@@ -120,13 +121,13 @@ local MINIMAP_DEFAULT_ANGLE = 200
 local minimapIcon = LibStub("LibDBIcon-1.0")
 local launcher = LibStub("LibDataBroker-1.1"):NewDataObject(addonName, {
     type = "launcher",
-    text = addonName,
+    text = ADDON_TITLE,
     icon = "Interface\\AddOns\\" .. addonName .. "\\Media\\Icon",
     OnClick = function()
         SetWindowShown(not display:IsShown())
     end,
     OnTooltipShow = function(tooltip)
-        tooltip:AddLine(addonName)
+        tooltip:AddLine(ADDON_TITLE)
         local line = SkillLine()
         if line then tooltip:AddLine(line, 1, 1, 1) end
         tooltip:AddLine(L("MINIMAP_CLICK"), 0.7, 0.7, 0.7)
@@ -135,7 +136,7 @@ local launcher = LibStub("LibDataBroker-1.1"):NewDataObject(addonName, {
 })
 
 local function UpdateMinimapButton()
-    if AnglerDB.minimap.hide then
+    if AnglersCompanionDB.minimap.hide then
         minimapIcon:Hide(addonName)
     else
         minimapIcon:Show(addonName)
@@ -147,7 +148,7 @@ local DEBUG_LOG_MAX = 300
 -- Chat text cannot be copied out of the game, so debug output also goes to SavedVariables.
 local function DebugLog(line)
     print(line)
-    local log = AnglerDB.debugLog
+    local log = AnglersCompanionDB.debugLog
     log[#log + 1] = date("%H:%M:%S ") .. line
     if #log > DEBUG_LOG_MAX then table.remove(log, 1) end
 end
@@ -270,13 +271,13 @@ end
 
 -- A shared pool the player has recorded too would show twice; the player's own record wins.
 local function IsRecordedByPlayer(mapID, shared)
-    return HasPoolNear(AnglerDB.pools[mapID], mapID, shared.kind, shared.x, shared.y)
+    return HasPoolNear(AnglersCompanionDB.pools[mapID], mapID, shared.kind, shared.x, shared.y)
 end
 
 -- Pools already in the shared list reach every player with the next update, so they need no sending.
 local function CountUnsentPools()
     local count = 0
-    for mapID, spots in pairs(AnglerDB.pools) do
+    for mapID, spots in pairs(AnglersCompanionDB.pools) do
         for _, spot in ipairs(spots) do
             if not spot.sent and not HasPoolNear(SharedSpots()[mapID], mapID, spot.kind, spot.x, spot.y) then
                 count = count + 1
@@ -287,7 +288,7 @@ local function CountUnsentPools()
 end
 
 function ns.MarkPoolsSent()
-    for _, spots in pairs(AnglerDB.pools) do
+    for _, spots in pairs(AnglersCompanionDB.pools) do
         for _, spot in ipairs(spots) do
             spot.sent = true
         end
@@ -297,8 +298,8 @@ end
 local function UpdatePoolPins()
     HBDPins:RemoveAllWorldMapIcons(addonName)
     HBDPins:RemoveAllMinimapIcons(addonName)
-    if not AnglerDB.showPools then return end
-    for mapID, spots in pairs(AnglerDB.pools) do
+    if not AnglersCompanionDB.showPools then return end
+    for mapID, spots in pairs(AnglersCompanionDB.pools) do
         for _, spot in ipairs(spots) do
             PlacePoolPins(mapID, spot)
         end
@@ -313,8 +314,8 @@ local function UpdatePoolPins()
 end
 
 local function StorePool(kind, name, mapID, x, y, width, height)
-    local spots = AnglerDB.pools[mapID] or {}
-    AnglerDB.pools[mapID] = spots
+    local spots = AnglersCompanionDB.pools[mapID] or {}
+    AnglersCompanionDB.pools[mapID] = spots
     for _, spot in ipairs(spots) do
         if spot.kind == kind and DistanceYards(width, height, spot.x, spot.y, x, y) <= POOL_MERGE_YARDS then
             spot.seen = spot.seen + 1
@@ -365,7 +366,7 @@ local function DebugLoot(event)
 end
 
 local function OnLoot(event)
-    if AnglerDB.debug then DebugLoot(event) end
+    if AnglersCompanionDB.debug then DebugLoot(event) end
     if lootHandled or not IsFishingLoot() then return end
     lootHandled = true
     RecordPoolCatch()
@@ -454,12 +455,12 @@ local function RestoreSound()
         restoreTimer:Cancel()
         restoreTimer = nil
     end
-    local saved = AnglerDB.soundSaved
+    local saved = AnglersCompanionDB.soundSaved
     if not saved then return end
     for name, value in pairs(saved) do
         C_CVar.SetCVar(name, value)
     end
-    AnglerDB.soundSaved = nil
+    AnglersCompanionDB.soundSaved = nil
 end
 
 local function BoostSound()
@@ -467,13 +468,13 @@ local function BoostSound()
         restoreTimer:Cancel()
         restoreTimer = nil
     end
-    if AnglerDB.soundSaved then return end
+    if AnglersCompanionDB.soundSaved then return end
 
     local saved = { Sound_MasterVolume = C_CVar.GetCVar("Sound_MasterVolume") }
     for name in pairs(FISHING_SOUND) do
         saved[name] = C_CVar.GetCVar(name)
     end
-    AnglerDB.soundSaved = saved
+    AnglersCompanionDB.soundSaved = saved
 
     for name, value in pairs(FISHING_SOUND) do
         C_CVar.SetCVar(name, value)
@@ -484,16 +485,16 @@ local function BoostSound()
 end
 
 local function ScheduleSoundRestore()
-    if not AnglerDB.soundSaved then return end
+    if not AnglersCompanionDB.soundSaved then return end
     if restoreTimer then restoreTimer:Cancel() end
     restoreTimer = C_Timer.NewTimer(SOUND_RESTORE_DELAY, RestoreSound)
 end
 
-local castButton = CreateFrame("Button", "AnglerCastButton", UIParent, "SecureActionButtonTemplate")
+local castButton = CreateFrame("Button", "AnglersCompanionCastButton", UIParent, "SecureActionButtonTemplate")
 castButton:RegisterForClicks("AnyUp", "AnyDown")
 castButton:SetAttribute("type", "spell")
 castButton:HookScript("OnClick", function(self, button, down)
-    if AnglerDB.debug then
+    if AnglersCompanionDB.debug then
         DebugLog(("[debug] castButton click button=%s down=%s spell=%s"):format(
             tostring(button), tostring(down), tostring(self:GetAttribute("spell"))))
     end
@@ -507,7 +508,7 @@ local diagnostics = CreateFrame("Frame")
 -- UNIT_SPELLCAST_START fires for every unit nearby, so these events are only listened to while debugging.
 local function UpdateDiagnostics()
     for _, event in ipairs(DIAGNOSTIC_EVENTS) do
-        if AnglerDB.debug then
+        if AnglersCompanionDB.debug then
             diagnostics:RegisterEvent(event)
         else
             diagnostics:UnregisterEvent(event)
@@ -532,11 +533,11 @@ end)
 
 -- World objects such as fishing pools only reveal their name through the mouseover tooltip.
 GameTooltip:HookScript("OnShow", function(self)
-    if not AnglerDB or self:GetUnit() or self:GetOwner() ~= UIParent then return end
+    if not AnglersCompanionDB or self:GetUnit() or self:GetOwner() ~= UIParent then return end
     local first = _G[self:GetName() .. "TextLeft1"]
     local text = first and first:GetText()
     if not text or issecretvalue(text) then return end
-    if AnglerDB.debug then
+    if AnglersCompanionDB.debug then
         DebugLog(("[debug] tooltip %q  %s"):format(text, PlayerPosition()))
     end
     RecordPoolHover(text)
@@ -590,7 +591,7 @@ equipButton:SetPoint("TOPRIGHT", display, "TOP", -ROW_CENTER_SHIFT - BUTTON_GAP 
 local function UpdateEquipButton()
     if HasFishingPole() then
         equipButton:SetText(L("SWAP_BACK"))
-        local saved = AnglerCharDB.weapons
+        local saved = AnglersCompanionCharDB.weapons
         equipButton:SetEnabled(saved ~= nil and (saved.main ~= nil or saved.off ~= nil))
     else
         equipButton:SetText(L("EQUIP_POLE"))
@@ -604,7 +605,7 @@ equipButton:SetScript("OnClick", function()
         return
     end
     if HasFishingPole() then
-        local saved = AnglerCharDB.weapons
+        local saved = AnglersCompanionCharDB.weapons
         if not saved then return end
         if saved.main then
             pendingOffHand = saved.off
@@ -612,11 +613,11 @@ equipButton:SetScript("OnClick", function()
         elseif saved.off then
             C_Item.EquipItemByName(saved.off, INVSLOT_OFFHAND)
         end
-        AnglerCharDB.weapons = nil
+        AnglersCompanionCharDB.weapons = nil
     else
         local pole = FindPoleInBags()
         if not pole then return end
-        AnglerCharDB.weapons = {
+        AnglersCompanionCharDB.weapons = {
             main = GetInventoryItemID("player", INVSLOT_MAINHAND),
             off = GetInventoryItemID("player", INVSLOT_OFFHAND),
         }
@@ -640,12 +641,12 @@ equipButton:SetScript("OnLeave", GameTooltip_Hide)
 -- One key casts; while the line is out the same key reels in through the soft-interact target.
 -- Without a pole equipped the key keeps its normal binding.
 local function SetKeyMode(mode)
-    local key = AnglerDB.key
+    local key = AnglersCompanionDB.key
     local requested = mode
     if mode == "cast" and not HasFishingPole() then
         mode = nil
     end
-    if AnglerDB.debug then
+    if AnglersCompanionDB.debug then
         local itemID = GetInventoryItemID("player", INVSLOT_MAINHAND)
         DebugLog(("[debug] SetKeyMode requested=%s applied=%s key=%s slot=%s item=%s pole=%s combat=%s"):format(
             tostring(requested), tostring(mode), tostring(key), tostring(INVSLOT_MAINHAND), tostring(itemID),
@@ -664,10 +665,10 @@ local function SetKeyMode(mode)
         SetOverrideBinding(castButton, true, key, "INTERACTTARGET")
     else
         castButton:SetAttribute("spell", C_Spell.GetSpellName(FISHING_SPELL_ID))
-        SetOverrideBindingClick(castButton, true, key, "AnglerCastButton")
+        SetOverrideBindingClick(castButton, true, key, "AnglersCompanionCastButton")
     end
     keyMode = mode
-    if AnglerDB.debug then
+    if AnglersCompanionDB.debug then
         DebugLog(("[debug] binding %s -> %s"):format(key, tostring(GetBindingAction(key, true))))
     end
 end
@@ -707,7 +708,7 @@ local function UpdateKeyButton()
     if keyButton.listening then
         keyButton:SetText(L("PRESS_KEY"))
     else
-        keyButton:SetText(AnglerDB.key and L("KEY_LABEL"):format(AnglerDB.key) or L("SET_KEY"))
+        keyButton:SetText(AnglersCompanionDB.key and L("KEY_LABEL"):format(AnglersCompanionDB.key) or L("SET_KEY"))
     end
 end
 
@@ -717,7 +718,7 @@ local function SetFishingKey(key)
         return
     end
     SetKeyMode(nil)
-    AnglerDB.key = key
+    AnglersCompanionDB.key = key
     UpdateKeyButton()
     if not key then
         Print(L("KEY_REMOVED"))
@@ -757,7 +758,7 @@ local function CaptureKey(_, key)
         .. (IsShiftKeyDown() and "SHIFT-" or "")
     local combo = modifiers .. key
     if MOVEMENT_ACTIONS[GetBindingAction(combo)] then
-        Print(L("MOVEMENT_KEY"):format(Highlight(combo), Highlight(AnglerDB.key or L("KEY_UNSET"))))
+        Print(L("MOVEMENT_KEY"):format(Highlight(combo), Highlight(AnglersCompanionDB.key or L("KEY_UNSET"))))
         return
     end
     SetFishingKey(combo)
@@ -767,7 +768,7 @@ keyButton:SetScript("OnClick", function(self, button)
     if self.listening then
         StopListening()
     elseif button == "RightButton" then
-        if AnglerDB.key then SetFishingKey(nil) end
+        if AnglersCompanionDB.key then SetFishingKey(nil) end
     elseif InCombatLockdown() then
         Print(L("NO_KEY_IN_COMBAT"))
     else
@@ -788,7 +789,7 @@ keyButton:SetScript("OnEnter", function(self)
     GameTooltip:SetText(L("KEY_TIP_TITLE"))
     GameTooltip:AddLine(L("KEY_TIP_USE"), 1, 1, 1, true)
     GameTooltip:AddLine(L("KEY_TIP_SET"), 0.7, 0.7, 0.7, true)
-    if AnglerDB.key then
+    if AnglersCompanionDB.key then
         GameTooltip:AddLine(L("KEY_TIP_REMOVE"), 0.7, 0.7, 0.7, true)
     end
     GameTooltip:Show()
@@ -843,7 +844,7 @@ lureButton:SetPoint("TOPRIGHT", display, "TOPRIGHT", -PADDING, -LURE_ROW_TOP)
 -- Using an item on the pole is protected, so a secure button takes the click. It lives on UIParent and is
 -- only placed over lureButton while hovered out of combat; as a child of the window it would make the
 -- window itself protected, and moving, resizing or closing it in combat would be blocked.
-local lureSecure = CreateFrame("Button", "AnglerLureButton", UIParent, "SecureActionButtonTemplate")
+local lureSecure = CreateFrame("Button", "AnglersCompanionLureButton", UIParent, "SecureActionButtonTemplate")
 -- With ActionButtonUseKeyDown the template acts on the press, so both press and release must reach it.
 lureSecure:RegisterForClicks("LeftButtonDown", "LeftButtonUp")
 lureSecure:SetAttribute("type", "item")
@@ -955,14 +956,14 @@ local function CheckSkillUp()
     local rank, maxRank = GetFishingSkill()
     if not rank then return end
 
-    local last = AnglerDB.lastRank
+    local last = AnglersCompanionDB.lastRank
     if last and rank > last then
         local msg = L("SKILL_UP"):format(rank, maxRank)
         Print("|cff00ff00" .. msg .. "|r")
         UIErrorsFrame:AddMessage(msg, 0.2, 0.8, 1.0)
         PlaySound(SOUNDKIT.UI_QUEST_ROLLING_FORWARD_01 or 888)
     end
-    AnglerDB.lastRank = rank
+    AnglersCompanionDB.lastRank = rank
 end
 
 -- Once a day at most, and late enough after login not to drown in the other addons' login messages.
@@ -970,11 +971,11 @@ local SHARE_REMINDER_DELAY = 15
 local SHARE_REMINDER_INTERVAL = 24 * 60 * 60
 
 local function RemindToShare()
-    if not AnglerDB.reminder or time() - (AnglerDB.lastReminder or 0) < SHARE_REMINDER_INTERVAL then return end
+    if not AnglersCompanionDB.reminder or time() - (AnglersCompanionDB.lastReminder or 0) < SHARE_REMINDER_INTERVAL then return end
     local count = CountUnsentPools()
     if count == 0 then return end
-    AnglerDB.lastReminder = time()
-    Print(L("REMINDER_TEXT"):format(count, Highlight("/angler export")))
+    AnglersCompanionDB.lastReminder = time()
+    Print(L("REMINDER_TEXT"):format(count, Highlight("/anglers export")))
 end
 
 local events = CreateFrame("Frame")
@@ -997,46 +998,46 @@ events:RegisterEvent("BAG_UPDATE_DELAYED")
 
 events:SetScript("OnEvent", function(self, event, arg1, arg2, arg3, arg4)
     if event == "ADDON_LOADED" and arg1 == addonName then
-        AnglerDB = AnglerDB or {}
-        if AnglerDB.shown == nil then AnglerDB.shown = true end
-        if AnglerDB.sound == nil then AnglerDB.sound = true end
+        AnglersCompanionDB = AnglersCompanionDB or {}
+        if AnglersCompanionDB.shown == nil then AnglersCompanionDB.shown = true end
+        if AnglersCompanionDB.sound == nil then AnglersCompanionDB.sound = true end
         -- The log is kept until the next load after debugging stops, so it can still be read from disk.
-        if not AnglerDB.debug or not AnglerDB.debugLog then AnglerDB.debugLog = {} end
+        if not AnglersCompanionDB.debug or not AnglersCompanionDB.debugLog then AnglersCompanionDB.debugLog = {} end
         UpdateDiagnostics()
-        AnglerDB.pools = AnglerDB.pools or {}
+        AnglersCompanionDB.pools = AnglersCompanionDB.pools or {}
         -- Earlier versions also saved pools on hover alone, at the player's position; only catches are kept.
-        for mapID, spots in pairs(AnglerDB.pools) do
+        for mapID, spots in pairs(AnglersCompanionDB.pools) do
             for i = #spots, 1, -1 do
                 if not spots[i].precise then table.remove(spots, i) end
             end
-            if #spots == 0 then AnglerDB.pools[mapID] = nil end
+            if #spots == 0 then AnglersCompanionDB.pools[mapID] = nil end
         end
-        if AnglerDB.showPools == nil then AnglerDB.showPools = true end
-        if AnglerDB.reminder == nil then AnglerDB.reminder = true end
-        AnglerDB.minimap = AnglerDB.minimap or { minimapPos = MINIMAP_DEFAULT_ANGLE }
-        minimapIcon:Register(addonName, launcher, AnglerDB.minimap)
-        AnglerCharDB = AnglerCharDB or {}
+        if AnglersCompanionDB.showPools == nil then AnglersCompanionDB.showPools = true end
+        if AnglersCompanionDB.reminder == nil then AnglersCompanionDB.reminder = true end
+        AnglersCompanionDB.minimap = AnglersCompanionDB.minimap or { minimapPos = MINIMAP_DEFAULT_ANGLE }
+        minimapIcon:Register(addonName, launcher, AnglersCompanionDB.minimap)
+        AnglersCompanionCharDB = AnglersCompanionCharDB or {}
         self:UnregisterEvent("ADDON_LOADED")
 
     elseif event == "PLAYER_LOGIN" then
         display:ClearAllPoints()
-        local p = AnglerDB.pos
+        local p = AnglersCompanionDB.pos
         if p then
             display:SetPoint(p[1], UIParent, p[2], p[3], p[4])
         else
             display:SetPoint("TOP", UIParent, "TOP", 0, -120)
         end
-        display:SetShown(AnglerDB.shown)
+        display:SetShown(AnglersCompanionDB.shown)
         UpdateLanguageButton()
         UpdateEquipButton()
         UpdateKeyButton()
         UpdateLureButton()
         UpdatePoolPins()
         CheckSkillUp()
-        Print(L("LOADED"):format(Highlight("/angler help")))
+        Print(L("LOADED"):format(Highlight("/anglers help")))
         C_Timer.After(SHARE_REMINDER_DELAY, RemindToShare)
         RestoreSound()
-        if AnglerDB.key then
+        if AnglersCompanionDB.key then
             SetKeyMode("cast")
             ReportSoftInteract()
         end
@@ -1049,7 +1050,7 @@ events:SetScript("OnEvent", function(self, event, arg1, arg2, arg3, arg4)
         HideLureSecure()
 
     elseif event == "PLAYER_EQUIPMENT_CHANGED" then
-        if arg1 == INVSLOT_MAINHAND and AnglerDB.key and keyMode ~= "reel" then
+        if arg1 == INVSLOT_MAINHAND and AnglersCompanionDB.key and keyMode ~= "reel" then
             SetKeyMode("cast")
         end
         if arg1 == INVSLOT_MAINHAND and pendingOffHand and not InCombatLockdown() then
@@ -1080,25 +1081,25 @@ events:SetScript("OnEvent", function(self, event, arg1, arg2, arg3, arg4)
         ReportFishingError(arg2)
 
     elseif event == "UNIT_SPELLCAST_CHANNEL_START" then
-        if AnglerDB.debug and arg1 == "player" then
+        if AnglersCompanionDB.debug and arg1 == "player" then
             DebugLog(("[debug] CHANNEL_START spell=%s name=%s fishingName=%s sound=%s"):format(
                 tostring(arg3), tostring(arg3 and C_Spell.GetSpellName(arg3)),
-                tostring(C_Spell.GetSpellName(FISHING_SPELL_ID)), tostring(AnglerDB.sound)))
+                tostring(C_Spell.GetSpellName(FISHING_SPELL_ID)), tostring(AnglersCompanionDB.sound)))
         end
         if arg1 == "player" and IsFishingSpell(arg3) then
             fishingErrorsUntil = math.huge
-            if AnglerDB.sound then BoostSound() end
-            if AnglerDB.key then SetKeyMode("reel") end
+            if AnglersCompanionDB.sound then BoostSound() end
+            if AnglersCompanionDB.key then SetKeyMode("reel") end
         end
 
     elseif event == "UNIT_SPELLCAST_CHANNEL_STOP" then
-        if AnglerDB.debug and arg1 == "player" then
-            DebugLog(("[debug] CHANNEL_STOP spell=%s saved=%s"):format(tostring(arg3), tostring(AnglerDB.soundSaved ~= nil)))
+        if AnglersCompanionDB.debug and arg1 == "player" then
+            DebugLog(("[debug] CHANNEL_STOP spell=%s saved=%s"):format(tostring(arg3), tostring(AnglersCompanionDB.soundSaved ~= nil)))
         end
         if arg1 == "player" and IsFishingSpell(arg3) then
             fishingErrorsUntil = GetTime() + FISHING_ERROR_SECONDS
             ScheduleSoundRestore()
-            if AnglerDB.key then SetKeyMode("cast") end
+            if AnglersCompanionDB.key then SetKeyMode("cast") end
         end
 
     elseif event == "PLAYER_LOGOUT" then
@@ -1123,39 +1124,39 @@ end
 local TOGGLES = {
     sound = {
         strings = "SOUND",
-        get = function() return AnglerDB.sound end,
+        get = function() return AnglersCompanionDB.sound end,
         set = function(enabled)
-            AnglerDB.sound = enabled
+            AnglersCompanionDB.sound = enabled
             if not enabled then RestoreSound() end
         end,
     },
     minimap = {
         strings = "MINIMAP",
-        get = function() return not AnglerDB.minimap.hide end,
+        get = function() return not AnglersCompanionDB.minimap.hide end,
         set = function(enabled)
-            AnglerDB.minimap.hide = not enabled
+            AnglersCompanionDB.minimap.hide = not enabled
             UpdateMinimapButton()
         end,
     },
     pools = {
         strings = "POOLS",
-        get = function() return AnglerDB.showPools end,
+        get = function() return AnglersCompanionDB.showPools end,
         set = function(enabled)
-            AnglerDB.showPools = enabled
+            AnglersCompanionDB.showPools = enabled
             UpdatePoolPins()
         end,
     },
     reminder = {
         strings = "REMINDER",
-        get = function() return AnglerDB.reminder end,
-        set = function(enabled) AnglerDB.reminder = enabled end,
+        get = function() return AnglersCompanionDB.reminder end,
+        set = function(enabled) AnglersCompanionDB.reminder = enabled end,
     },
     debug = {
         strings = "DEBUG",
-        get = function() return AnglerDB.debug end,
+        get = function() return AnglersCompanionDB.debug end,
         set = function(enabled)
-            AnglerDB.debug = enabled
-            if enabled then AnglerDB.debugLog = {} end
+            AnglersCompanionDB.debug = enabled
+            if enabled then AnglersCompanionDB.debugLog = {} end
             UpdateDiagnostics()
         end,
     },
@@ -1171,11 +1172,11 @@ end
 local function ReportToggle(name)
     local toggle = TOGGLES[name]
     Print(L(toggle.strings .. "_IS"):format(OnOff(toggle.get()),
-        Highlight(("/angler %s on"):format(name)), Highlight(("/angler %s off"):format(name))))
+        Highlight(("/anglers %s on"):format(name)), Highlight(("/anglers %s off"):format(name))))
 end
 
 local function SetLanguage(code)
-    AnglerDB.language = code
+    AnglersCompanionDB.language = code
     UpdateLanguageButton()
     UpdateDisplay()
     UpdateEquipButton()
@@ -1201,8 +1202,8 @@ optionsButton:SetPoint("RIGHT", display.CloseButton, "LEFT", -2, 0)
 optionsButton:SetFrameLevel(display.CloseButton:GetFrameLevel())
 optionsButton:SetupMenu(function(_, root)
     -- SetupMenu builds the menu once at load, before SavedVariables exist; it is rebuilt on every open.
-    if not AnglerDB then return end
-    root:CreateTitle(addonName)
+    if not AnglersCompanionDB then return end
+    root:CreateTitle(ADDON_TITLE)
     for _, name in ipairs(MENU_TOGGLES) do
         local toggle = TOGGLES[name]
         root:CreateCheckbox(L("MENU_" .. toggle.strings), toggle.get,
@@ -1211,22 +1212,22 @@ optionsButton:SetupMenu(function(_, root)
     root:CreateButton(L("MENU_EXPORT"), function() ns.ShowExport() end)
 
     root:CreateDivider()
-    root:CreateButton(AnglerDB.key and L("MENU_CHANGE_KEY"):format(AnglerDB.key) or L("MENU_SET_KEY"), function()
+    root:CreateButton(AnglersCompanionDB.key and L("MENU_CHANGE_KEY"):format(AnglersCompanionDB.key) or L("MENU_SET_KEY"), function()
         keyButton:Click("LeftButton")
     end)
-    root:CreateButton(L("MENU_REMOVE_KEY"), function() SetFishingKey(nil) end):SetEnabled(AnglerDB.key ~= nil)
+    root:CreateButton(L("MENU_REMOVE_KEY"), function() SetFishingKey(nil) end):SetEnabled(AnglersCompanionDB.key ~= nil)
 end)
 
-SLASH_ANGLER1 = "/angler"
-SlashCmdList.ANGLER = function(msg)
+SLASH_ANGLERSCOMPANION1 = "/anglers"
+SlashCmdList.ANGLERSCOMPANION = function(msg)
     msg = strlower(strtrim(msg or ""))
     local keyArg = msg:match("^key%s+(%S+)$")
     local languageArg = msg:match("^language%s+(%a+)$")
     local toggleName, toggleArg = msg:match("^(%a+)%s*(%a*)$")
     if not TOGGLES[toggleName] then toggleName = nil end
     if msg == "key" then
-        Print(AnglerDB.key and L("KEY_IS"):format(Highlight(AnglerDB.key))
-            or L("KEY_NONE"):format(Highlight("/angler key F"), Highlight("/angler key off")))
+        Print(AnglersCompanionDB.key and L("KEY_IS"):format(Highlight(AnglersCompanionDB.key))
+            or L("KEY_NONE"):format(Highlight("/anglers key F"), Highlight("/anglers key off")))
     elseif keyArg == "off" then
         SetFishingKey(nil)
     elseif keyArg then
@@ -1243,19 +1244,19 @@ SlashCmdList.ANGLER = function(msg)
         SetLanguage(ns.LanguageByShort(languageArg).code)
     elseif msg == "language" or languageArg then
         Print(L("LANGUAGE_IS"):format(ns.LanguageInfo(ns.GetLanguage()).label,
-            Highlight("/angler language " .. ns.LanguageShortList())))
+            Highlight("/anglers language " .. ns.LanguageShortList())))
     else
         Print(L("COMMANDS"))
         local help = {
-            { "/angler show", "HELP_SHOW" },
-            { "/angler hide", "HELP_HIDE" },
-            { "/angler minimap on|off", "HELP_MINIMAP" },
-            { "/angler pools on|off", "HELP_POOLS" },
-            { "/angler export", "HELP_EXPORT" },
-            { "/angler reminder on|off", "HELP_REMINDER" },
-            { "/angler sound on|off", "HELP_SOUND" },
-            { "/angler key F|off", "HELP_KEY" },
-            { "/angler language " .. ns.LanguageShortList(), "HELP_LANGUAGE" },
+            { "/anglers show", "HELP_SHOW" },
+            { "/anglers hide", "HELP_HIDE" },
+            { "/anglers minimap on|off", "HELP_MINIMAP" },
+            { "/anglers pools on|off", "HELP_POOLS" },
+            { "/anglers export", "HELP_EXPORT" },
+            { "/anglers reminder on|off", "HELP_REMINDER" },
+            { "/anglers sound on|off", "HELP_SOUND" },
+            { "/anglers key F|off", "HELP_KEY" },
+            { "/anglers language " .. ns.LanguageShortList(), "HELP_LANGUAGE" },
         }
         for _, line in ipairs(help) do
             print(("   %s - %s"):format(line[1], L(line[2])))

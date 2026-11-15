@@ -1,16 +1,16 @@
 ---@diagnostic disable: undefined-global
 -- The workspace language server is set up for WoW addons, which have no io, os, dofile or loadfile; this is a plain Lua tool.
--- Builds Angler/Data/SharedPools.lua from pool submissions.
+-- Builds AnglersCompanion/Data/SharedPools.lua from pool submissions.
 --
 -- Usage (from the repository root, Lua 5.1):
---   lua tools/build-shared-pools.lua [--csv <file or URL>] [--saved <SavedVariables/Angler.lua>]... [--min-reports N]
+--   lua tools/build-shared-pools.lua [--csv <file or URL>] [--saved <SavedVariables/AnglersCompanion.lua>]... [--min-reports N]
 --
 -- Without --csv, the published form CSV URL is read from .pools-csv-url, which stays out of the repository.
 -- --saved adds the precise pools of a player's own SavedVariables file.
 -- The output is a pure function of the inputs: deleting a row from the form sheet drops its pools on the next build.
 
 local ROOT = (arg[0]:match("^(.*)/tools/[^/]+$") or ".")
-local ADDON = ROOT .. "/Angler"
+local ADDON = ROOT .. "/AnglersCompanion"
 local OUTPUT = ADDON .. "/Data/SharedPools.lua"
 
 local PREFIX = "ANGLER1:"
@@ -195,7 +195,7 @@ local function ReadSaved(path)
     local env = {}
     setfenv(chunk, env)
     chunk()
-    local pools = env.AnglerDB and env.AnglerDB.pools
+    local pools = env.AnglersCompanionDB and env.AnglersCompanionDB.pools
     if type(pools) ~= "table" then Fail(path .. " has no recorded pools") end
     local added = 0
     for mapID, spots in pairs(pools) do
