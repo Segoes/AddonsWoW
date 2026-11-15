@@ -301,8 +301,6 @@ local function StorePool(kind, name, mapID, x, y, width, height)
     return spot, true
 end
 
-ns.StorePool = StorePool
-
 local function RecordPoolHover(name)
     local kind = ns.PoolKey(name)
     if not kind then return end
@@ -1092,7 +1090,6 @@ optionsButton:SetupMenu(function(_, root)
             function() SetToggle(name, not toggle.get()) end)
     end
     root:CreateButton(L("MENU_EXPORT"), function() ns.ShowExport() end)
-    root:CreateButton(L("MENU_IMPORT"), function() ns.ShowImport() end)
 
     root:CreateDivider()
     root:CreateButton(AnglerDB.key and L("MENU_CHANGE_KEY"):format(AnglerDB.key) or L("MENU_SET_KEY"), function()
@@ -1123,8 +1120,6 @@ SlashCmdList.ANGLER = function(msg)
         ReportToggle(toggleName)
     elseif msg == "export" then
         ns.ShowExport()
-    elseif msg == "import" then
-        ns.ShowImport()
     elseif languageArg and ns.LanguageByShort(languageArg) then
         SetLanguage(ns.LanguageByShort(languageArg).code)
     elseif msg == "language" or languageArg then
@@ -1138,7 +1133,6 @@ SlashCmdList.ANGLER = function(msg)
             { "/angler minimap on|off", "HELP_MINIMAP" },
             { "/angler pools on|off", "HELP_POOLS" },
             { "/angler export", "HELP_EXPORT" },
-            { "/angler import", "HELP_IMPORT" },
             { "/angler sound on|off", "HELP_SOUND" },
             { "/angler key F|off", "HELP_KEY" },
             { "/angler language " .. ns.LanguageShortList(), "HELP_LANGUAGE" },

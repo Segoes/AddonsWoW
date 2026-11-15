@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.21.0
+- Pool import removed: shared pools now arrive with each update, from the texts sent through the form.
+
 ## 0.20.3
 - Code cleanup: shared helpers for buttons, bag searches and on/off settings, and removal of data migrations from earlier test versions.
 
